@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>API Hacking : Pirate le Web Caché</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #ffafbd, #ffc3a0);
+      color: #5a1846;
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .quiz-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(90, 24, 70, 0.3);
+      width: 90%;
+      max-width: 700px;
+      padding: 30px;
+      position: relative;
+      overflow: hidden;
+      border: 2px solid #ff6b9d;
+    }
+
+    .quiz-container::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 6px;
+      background: linear-gradient(90deg, #ff6b9d, #ff85a1);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: 1.8rem;
+      color: #d6307d;
+      text-shadow: 0 2px 4px rgba(214, 48, 125, 0.2);
+    }
+
+    .progress {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      font-size: 1rem;
+      color: #d6307d;
+      font-weight: bold;
+    }
+
+    .question-box {
+      background: rgba(255, 240, 245, 0.8);
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+      font-size: 1.1rem;
+      line-height: 1.5;
+      border: 2px solid #ffccd5;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .option {
+      background: rgba(255, 245, 248, 0.9);
+      padding: 15px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      border: 2px solid #ff85a1;
+      color: #5a1846;
+    }
+
+    .option:hover {
+      background: rgba(255, 230, 240, 0.95);
+      transform: translateY(-2px);
+      border-color: #ff6b9d;
+    }
+
+    .option.selected {
+      border-color: #ff6b9d;
+      background: rgba(255, 220, 235, 0.8);
+      box-shadow: 0 0 10px rgba(255, 107, 157, 0.4);
+    }
+
+    .option.correct {
+      border-color: #4caf50;
+      background: rgba(232, 245, 233, 0.9);
+      color: #2e7d32;
+    }
+
+    .option.incorrect {
+      border-color: #f44336;
+      background: rgba(255, 235, 235, 0.9);
+      color: #c62828;
+    }
+
+    .navigation {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+      background: linear-gradient(90deg, #ff6b9d, #ff85a1);
+      color: white;
+      font-size: 1rem;
+      box-shadow: 0 4px 8px rgba(214, 48, 125, 0.3);
+    }
+
+    #hint-btn {
+      background: linear-gradient(90deg, #ffb347, #ffcc33);
+      color: #5a1846;
+    }
+
+    #hint-btn:hover {
+      opacity: 0.9;
+      transform: scale(1.03);
+      box-shadow: 0 6px 12px rgba(255, 179, 71, 0.4);
+    }
+
+    button:hover {
+      opacity: 0.9;
+      transform: scale(1.03);
+      box-shadow: 0 6px 12px rgba(214, 48, 125, 0.4);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .explanation {
+      margin-top: 20px;
+      padding: 15px;
+      background: rgba(232, 245, 233, 0.9);
+      border-left: 4px solid #4caf50;
+      border-radius: 0 8px 8px 0;
+      display: none;
+      color: #2e7d32;
+    }
+
+    .explanation.show {
+      display: block;
+    }
+
+    .hint {
+      margin-top: 15px;
+      padding: 12px;
+      background: rgba(255, 248, 220, 0.9);
+      border-left: 4px solid #ffb300;
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+      color: #e65100;
+      display: none;
+    }
+
+    .hint.show {
+      display: block;
+    }
+
+    .score-display {
+      text-align: center;
+      font-size: 1.3rem;
+      margin-top: 20px;
+      color: #d6307d;
+      font-weight: bold;
+    }
+
+    .finish-message {
+      text-align: center;
+      font-size: 1.6rem;
+      margin: 20px 0;
+      color: #d6307d;
+      font-weight: bold;
+    }
+
+    .result-details {
+      text-align: center;
+      margin: 15px 0;
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+
+    .correct-count {
+      color: #4caf50;
+      font-weight: bold;
+    }
+
+    .incorrect-count {
+      color: #f44336;
+      font-weight: bold;
+    }
+
+    .percentage {
+      color: #ff9800;
+      font-weight: bold;
+      font-size: 1.4rem;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    code {
+      background: rgba(255, 224, 235, 0.8);
+      padding: 2px 4px;
+      border-radius: 4px;
+      color: #d6307d;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="quiz-container">
+    <h1>API Hacking : Pirate le Web Caché</h1>
+
+    <div id="quiz">
+      <div class="progress">
+        <span id="question-number">1 / 15</span>
+        <span id="score">Score: 0</span>
+      </div>
+
+      <div class="question-box" id="question-text">
+        Quelle étape du test d'intrusion se concentre sur la découverte des ports ouverts et des services système sans les exploiter activement ?
+      </div>
+
+      <button id="hint-btn">💡 Afficher l'indice</button>
+
+      <div class="hint" id="hint">
+        <!-- Hint will be inserted by JS -->
+      </div>
+
+      <div class="options" id="options">
+        <!-- Options will be inserted by JS -->
+      </div>
+
+      <div class="explanation" id="explanation">
+        <!-- Explanation will be inserted by JS -->
+      </div>
+
+      <div class="navigation">
+        <button id="prev" disabled>Précédente</button>
+        <button id="next">Suivante</button>
+      </div>
+    </div>
+
+    <div id="results" class="hidden">
+      <div class="finish-message" id="finish-message"></div>
+      <div class="result-details">
+        <div>✅ Réponses correctes : <span class="correct-count" id="correct-count">0</span></div>
+        <div>❌ Réponses incorrectes : <span class="incorrect-count" id="incorrect-count">0</span></div>
+        <div>📊 Pourcentage de réussite : <span class="percentage" id="percentage">0%</span></div>
+      </div>
+      <button id="restart" style="width: 100%; margin-top: 20px;">Recommencer le Quiz</button>
+    </div>
+  </div>
+
+  <script>
+    const quizData = [
+      {
+        question: "Quelle étape du test d'intrusion se concentre sur la découverte des ports ouverts et des services système sans les exploiter activement ?",
+        options: [
+          "Reporting (Rapport)",
+          "Exploitation",
+          "Scanning (Analyse)",
+          "Reconnaissance"
+        ],
+        correct: 2,
+        explanation: "Cette phase utilise les informations de la reconnaissance pour sonder activement la cible à la recherche de points d'entrée potentiels comme les ports ouverts.",
+        hint: "Cette phase vient après la reconnaissance et avant l'exploitation. Elle implique l'utilisation d'outils comme Nmap."
+      },
+      {
+        question: "Quel est le principe fondamental d'une vulnérabilité de type \"Broken Object Level Authorization\" (BOLA) ?",
+        options: [
+          "L'API accepte des jetons JWT non signés, permettant à un attaquant de forger son identité.",
+          "Un attaquant peut accéder aux données d'un autre utilisateur en manipulant un identifiant d'objet dans la requête.",
+          "Un attaquant peut exécuter des fonctions administratives sans y être autorisé.",
+          "Une API retourne trop d'informations sensibles dans sa réponse, que le client est censé filtrer."
+        ],
+        correct: 1,
+        explanation: "BOLA se produit lorsque le serveur ne vérifie pas si l'utilisateur qui fait la demande a le droit d'accéder à l'objet spécifique demandé.",
+        hint: "Pensez à ce qui pourrait mal se passer avec un point de terminaison comme <code>/api/commandes/12345</code>."
+      },
+      {
+        question: "Quel outil est principalement utilisé comme un proxy d'interception pour capturer et manipuler les requêtes API entre un client (comme Postman) et le serveur ?",
+        options: [
+          "Postman",
+          "Burp Suite",
+          "cURL",
+          "Swagger/OpenAPI"
+        ],
+        correct: 1,
+        explanation: "La fonctionnalité principale de Burp Suite est son proxy d'interception, qui permet une analyse et une manipulation détaillées des requêtes et réponses HTTP/S.",
+        hint: "Cet outil est très populaire parmi les pentesters pour tester la sécurité des applications web et APIs."
+      },
+      {
+        question: "Quel est l'objectif principal de la mise en place d'une limitation de débit (rate limiting) sur une API ?",
+        options: [
+          "Assurer que seuls les utilisateurs authentifiés peuvent accéder aux points de terminaison.",
+          "Valider le format et le type des données entrantes pour prévenir les injections.",
+          "Chiffrer les données en transit pour empêcher leur interception.",
+          "Empêcher les attaques par force brute, l'abus de ressources et le scraping de données."
+        ],
+        correct: 3,
+        explanation: "La limitation de débit contrôle la fréquence des requêtes, ce qui est une défense clé contre les attaques automatisées qui reposent sur un grand volume de requêtes.",
+        hint: "Cette technique protège contre les attaques qui envoient trop de requêtes en peu de temps."
+      },
+      {
+        question: "Une vulnérabilité JWT où l'en-tête `alg` est modifié en `none` permet à un attaquant de réaliser quelle action ?",
+        options: [
+          "Rendre le jeton réutilisable après sa date d'expiration.",
+          "Contourner complètement la vérification de la signature du jeton.",
+          "Extraire le mot de passe de l'utilisateur de la charge utile du jeton.",
+          "Forcer le serveur à révéler la clé secrète utilisée pour la signature."
+        ],
+        correct: 1,
+        explanation: "L'algorithme `none` indique que le jeton n'est pas signé, donc si le serveur l'accepte, il ne vérifiera aucune signature et fera confiance à la charge utile.",
+        hint: "L'algorithme 'none' signifie qu'aucune signature n'est appliquée au jeton JWT."
+      },
+      {
+        question: "Quelle est la principale raison d'analyser les fichiers JavaScript lors de la phase de reconnaissance d'un test d'intrusion d'API ?",
+        options: [
+          "Pour découvrir des points de terminaison d'API non documentés ou cachés.",
+          "Pour y trouver des vulnérabilités de type Cross-Site Scripting (XSS).",
+          "Pour comprendre la logique métier de l'application côté serveur.",
+          "Pour trouver des mots de passe en clair codés en dur dans les fichiers."
+        ],
+        correct: 0,
+        explanation: "Le code côté client contient souvent des appels vers des APIs backend, révélant la structure et les points de terminaison de l'API.",
+        hint: "Le frontend contient souvent des URLs d'API cachées dans le code source."
+      },
+      {
+        question: "Une vulnérabilité de type SSRF (Server-Side Request Forgery) dans une API permet à un attaquant de faire quoi ?",
+        options: [
+          "Modifier des propriétés d'objet non autorisées, comme le rôle d'un utilisateur.",
+          "Forcer le serveur de l'API à effectuer des requêtes vers des ressources internes ou externes.",
+          "Surcharger le serveur avec un très grand nombre de requêtes.",
+          "Injecter des scripts malveillants dans le navigateur d'un autre utilisateur."
+        ],
+        correct: 1,
+        explanation: "L'attaquant exploite la confiance que le serveur a en lui-même pour sonder le réseau interne ou interagir avec des services externes.",
+        hint: "Cette vulnérabilité force le serveur à faire des requêtes qu'il ne devrait pas faire."
+      },
+      {
+        question: "Quel est un principe fondamental d'une architecture API Zero Trust ?",
+        options: [
+          "Faire confiance par défaut à toutes les requêtes provenant du réseau interne de l'entreprise.",
+          "Uniquement chiffrer les données lorsqu'elles quittent le réseau privé.",
+          "Authentifier et autoriser explicitement chaque requête, quelle que soit son origine.",
+          "S'appuyer sur un pare-feu périmétrique puissant comme principale ligne de défense."
+        ],
+        correct: 2,
+        explanation: "Ce principe, \"ne jamais faire confiance, toujours vérifier\", est au cœur du modèle Zero Trust, traitant chaque accès comme une menace potentielle.",
+        hint: "Le modèle Zero Trust ne fait jamais confiance par défaut, même au traffic interne."
+      },
+      {
+        question: "Dans le contexte de l'exfiltration de données, qu'est-ce que le \"DNS Tunneling\" ?",
+        options: [
+          "Trouver tous les sous-domaines d'une cible pendant la phase de reconnaissance.",
+          "Lancer une attaque par déni de service distribué (DDoS) contre un serveur DNS.",
+          "Dissimuler des données volées à l'intérieur de requêtes et de réponses DNS pour contourner les pare-feu.",
+          "Utiliser un VPN pour chiffrer le trafic réseau et cacher l'adresse IP de l'attaquant."
+        ],
+        correct: 2,
+        explanation: "Cette technique utilise le protocole DNS, souvent moins filtré, comme un canal de communication secret pour extraire des données.",
+        hint: "Le DNS est souvent autorisé à travers les pare-feu, ce qui le rend utile pour exfiltrer des données."
+      },
+      {
+        question: "Lors d'un test d'intrusion en \"grey box\" (boîte grise), quel niveau d'information est généralement fourni au pentester ?",
+        options: [
+          "Une connaissance partielle, comme des identifiants d'utilisateur valides ou une documentation API limitée.",
+          "Un accès complet au code source, aux schémas d'architecture et à la documentation interne.",
+          "Uniquement l'emplacement physique des serveurs de l'entreprise.",
+          "Aucune information n'est fournie ; le testeur part de zéro."
+        ],
+        correct: 0,
+        explanation: "L'approche en \"grey box\" simule un attaquant ayant déjà un certain niveau d'accès, comme un utilisateur authentifié ou un initié.",
+        hint: "Ce type de test combine des éléments de boîte noire et de boîte blanche."
+      },
+      {
+        question: "Comment une vulnérabilité de type \"Mass Assignment\" permet-elle généralement à un attaquant d'élever ses privilèges ?",
+        options: [
+          "En devinant le jeton de session d'un autre utilisateur pour usurper son identité.",
+          "En exploitant une bibliothèque logicielle obsolète et vulnérable sur le serveur.",
+          "En incluant une propriété non intentionnelle ou cachée (par ex. `\"role\": \"admin\"`) dans le corps d'une requête JSON.",
+          "En envoyant une charge utile d'injection SQL dans un champ de la requête."
+        ],
+        correct: 2,
+        explanation: "L'attaque exploite les frameworks qui lient automatiquement les données de la requête à des objets internes, permettant de modifier des champs qui ne devraient pas être accessibles.",
+        hint: "Cette vulnérabilité permet d'envoyer des champs supplémentaires que l'API ne devrait pas accepter."
+      },
+      {
+        question: "Quelle est une différence de sécurité clé lors du test d'une API GraphQL par rapport à une API REST ?",
+        options: [
+          "Les APIs GraphQL sont intrinsèquement protégées contre les attaques par injection.",
+          "GraphQL expose un point de terminaison unique, et la sécurité dépend de la validation de la structure de la requête et de l'accès aux champs.",
+          "Les APIs REST utilisent toujours XML, tandis que GraphQL utilise toujours JSON.",
+          "Contrairement à GraphQL, les APIs REST ne nécessitent pas d'authentification."
+        ],
+        correct: 1,
+        explanation: "Contrairement à REST avec ses multiples points de terminaison, GraphQL centralise les requêtes, déplaçant la surface d'attaque vers la logique de la requête elle-même.",
+        hint: "GraphQL utilise un seul endpoint, contrairement à REST qui en a plusieurs."
+      },
+      {
+        question: "Quelle est la meilleure pratique recommandée pour la validation des entrées (input validation) afin de prévenir les attaques ?",
+        options: [
+          "S'appuyer sur la validation côté client pour améliorer l'expérience utilisateur et réduire la charge du serveur.",
+          "Utiliser une liste de refus (denylist) pour bloquer les caractères et chaînes malveillants connus.",
+          "Utiliser une liste d'autorisation (allowlist) pour définir et n'accepter que les formats, types et valeurs de données attendus.",
+          "Désactiver la validation dans les environnements de production pour améliorer les performances de l'API."
+        ],
+        correct: 2,
+        explanation: "Une liste d'autorisation est une approche beaucoup plus sûre car elle rejette par défaut toute entrée qui n'est pas explicitement autorisée.",
+        hint: "Il vaut mieux autoriser seulement ce qui est connu comme sûr plutôt que de bloquer ce qui est connu comme dangereux."
+      },
+      {
+        question: "Quelles informations un pentester peut-il souvent obtenir à partir d'un fichier de documentation Swagger/OpenAPI exposé publiquement ?",
+        options: [
+          "Une liste de toutes les sessions utilisateur actives avec leurs adresses IP.",
+          "Les clés privées utilisées par le serveur pour signer les jetons JWT.",
+          "L'emplacement physique du serveur et les spécifications de son matériel.",
+          "Une carte complète des points de terminaison de l'API, de leurs paramètres et des formats de données attendus."
+        ],
+        correct: 3,
+        explanation: "La documentation OpenAPI est conçue pour décrire précisément le fonctionnement de l'API, ce qui en fait une feuille de route pour un attaquant.",
+        hint: "Ce fichier sert de carte détaillée de toutes les fonctionnalités de l'API."
+      },
+      {
+        question: "Quelle est la fonction principale d'un pare-feu applicatif web (WAF) ou d'un pare-feu d'API ?",
+        options: [
+          "Filtrer, surveiller et bloquer le trafic HTTP/S malveillant avant qu'il n'atteigne l'API.",
+          "Assister les développeurs en écrivant automatiquement du code sécurisé.",
+          "Stocker et gérer les journaux d'événements de l'API pour une analyse à long terme.",
+          "Gérer les identités des utilisateurs et les processus d'authentification."
+        ],
+        correct: 0,
+        explanation: "Un WAF agit comme un bouclier, inspectant le trafic à la recherche de signatures d'attaques connues et de modèles anormaux.",
+        hint: "Cet outil agit comme un filtre de sécurité pour le trafic web entrant et sortant."
+      }
+    ];
+
+    let currentQuestion=0;
+    let userAnswers=new Array(quizData.length).fill(null);
+    let hintsUsed=new Array(quizData.length).fill(false);
+
+    const qText=document.getElementById('question-text');
+    const opts=document.getElementById('options');
+    const expl=document.getElementById('explanation');
+    const hint=document.getElementById('hint');
+    const hintBtn=document.getElementById('hint-btn');
+    const qNum=document.getElementById('question-number');
+    const scoreBox=document.getElementById('score');
+    const prevBtn=document.getElementById('prev');
+    const nextBtn=document.getElementById('next');
+
+    function calculateScore(){
+      return userAnswers.reduce((acc,a,i)=> a===quizData[i].correct ? acc+1 : acc, 0);
+    }
+
+    function loadQuestion(){
+      const q=quizData[currentQuestion];
+      qText.textContent=q.question;
+      qNum.textContent=`${currentQuestion+1} / ${quizData.length}`;
+      scoreBox.textContent=`Score: ${calculateScore()}`;
+
+      opts.innerHTML="";
+      q.options.forEach((o,i)=>{
+        const d=document.createElement('div');
+        d.className='option';
+        d.innerHTML = `<strong>${String.fromCharCode(65 + i)}.</strong> ${o}`;
+        if(userAnswers[currentQuestion]===i) d.classList.add('selected');
+        d.onclick=()=>selectOption(d,i);
+        opts.appendChild(d);
+      });
+
+      expl.classList.remove('show');
+
+      hint.classList.remove('show');
+      if(q.hint){
+        hintBtn.disabled=hintsUsed[currentQuestion];
+        hintBtn.textContent=hintsUsed[currentQuestion] ? "💡 Indice déjà utilisé" : "💡 Afficher l'indice";
+        hintBtn.style.display="inline-block";
+      } else {
+        hintBtn.style.display="none";
+      }
+
+      prevBtn.disabled = currentQuestion===0;
+      nextBtn.textContent=currentQuestion===quizData.length-1 ? "Voir Résultats" : "Suivante";
+    }
+
+    function selectOption(el,index){
+      document.querySelectorAll('.option').forEach(o=>o.classList.remove('selected','correct','incorrect'));
+      el.classList.add('selected');
+      userAnswers[currentQuestion]=index;
+
+      const correct=quizData[currentQuestion].correct;
+      if(index===correct){el.classList.add('correct');}
+      else{
+        el.classList.add('incorrect');
+        document.querySelectorAll('.option')[correct].classList.add('correct');
+      }
+
+      expl.textContent=quizData[currentQuestion].explanation;
+      expl.classList.add('show');
+      scoreBox.textContent=`Score: ${calculateScore()}`;
+    }
+
+    hintBtn.onclick=()=>{
+      hint.textContent=quizData[currentQuestion].hint;
+      hint.classList.add('show');
+      hintsUsed[currentQuestion]=true;
+      hintBtn.disabled=true;
+      hintBtn.textContent="💡 Indice déjà utilisé";
+    }
+
+    prevBtn.onclick=()=>{
+      if(currentQuestion>0){currentQuestion--; loadQuestion();}
+    }
+
+    nextBtn.onclick=()=>{
+      if(currentQuestion<quizData.length-1){currentQuestion++; loadQuestion();}
+      else showResults();
+    }
+
+    function showResults(){
+      document.getElementById('quiz').classList.add('hidden');
+      const results=document.getElementById('results');
+      results.classList.remove('hidden');
+      const correct=calculateScore();
+      const total=quizData.length;
+      document.getElementById('correct-count').textContent=correct;
+      document.getElementById('incorrect-count').textContent=total-correct;
+      document.getElementById('percentage').textContent=`${Math.round((correct/total)*100)}%`;
+      const msg=document.getElementById('finish-message');
+      if(correct===total) msg.textContent="🏆 Hacker Suprême !";
+      else if(correct>=total*0.8) msg.textContent="🎖️ Excellent !";
+      else if(correct>=total*0.6) msg.textContent="👍 Bon travail !";
+      else if(correct>=total*0.4) msg.textContent="📚 En progrès !";
+      else msg.textContent="💡 Débutant !";
+    }
+
+    document.getElementById('restart').onclick=()=>{
+      currentQuestion=0;
+      userAnswers.fill(null);
+      hintsUsed.fill(false);
+      document.getElementById('results').classList.add('hidden');
+      document.getElementById('quiz').classList.remove('hidden');
+      loadQuestion();
+    }
+
+    loadQuestion();
+  </script>
+</body>
+</html>
+
